@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Cap2</string>
+    <string name="title_activity_device_pairing">devicePairing</string>
+    <string name="title_activity_test">test</string>
+</resources>

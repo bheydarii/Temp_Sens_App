@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_margin="16dp"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    tools:context=".MainActivity"
+    android:weightSum="1">
+
+    <Button
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:onClick="bluetooth"
+    android:text="Pair to Bluetooth Device"
+    android:textSize="15sp"/>
+
+    <!--<TextView android:id="@+id/title_paired_devices"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:text="Select device from paired devices:"-->
+        <!--android:visibility="gone"/>-->
+
+    <!--<ListView android:id="@+id/paired_devices"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="0dp"-->
+        <!--android:stackFromBottom="false" />-->
+
+    <!--<TextView-->
+        <!--android:id="@+id/connecting"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:textAppearance="?android:attr/textAppearanceLarge" />-->
+
+    <!--<TextView-->
+        <!--android:id="@+id/infoText"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:visibility="gone"-->
+        <!--android:text="If no devices are listed please pair your device in Android settings"-->
+        <!--android:layout_marginBottom="10dp"/>-->
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:text="Desired Temperature"
+        android:textSize="20sp"
+        android:id="@+id/textView" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/decrease"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="decreaseInteger"
+            android:textSize="20sp"
+            android:text="-" />
+
+        <TextView
+            android:id="@+id/integer_number"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:layout_marginLeft="40dp"
+            android:layout_marginRight="40dp"
+            android:layout_marginTop="16dp"
+            android:text="21"
+            android:textStyle="bold"
+            android:textSize="70sp" />
+
+        <Button
+            android:id="@+id/increase"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="increaseInteger"
+            android:textSize="20sp"
+            android:text="+" />
+
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Current Home Temperature"
+        android:textSize="20sp"
+        android:layout_weight="0.05" />
+
+</LinearLayout>
+
+
