@@ -14,64 +14,31 @@ import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
     int minteger = 21;
-//    TextView textConnectionStatus;
-//    ListView pairedListView;
-//
-//    private BluetoothAdapter mBtAdapter;
-//    private ArrayAdapter<String> mPairedDevicesArrayAdapter;
+
+    ConnectionCallback connectionCallback = new ConnectionCallback() {
+        public void onConnected() {
+
+        }
+        public void onConnectionFailed() {
+
+        }
+    };
+    private BluetoothConnector bluetoothConnector;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-//        textConnectionStatus = (TextView) findViewById(R.id.connecting);
-//        textConnectionStatus.setTextSize(40);
-//
-//        mPairedDevicesArrayAdapter = new ArrayAdapter<String>(this, R.layout.device_name);
-//
-//        pairedListView = (ListView) findViewById(R.id.paired_devices);
-//        pairedListView.setAdapter(mPairedDevicesArrayAdapter);
+        bluetoothConnector = new BluetoothConnector(connectionCallback);
     }
 
-//    @Override
-//    public void onResume()
-//    {
-//        super.onResume();
-//        checkBTState();
-//        mPairedDevicesArrayAdapter.clear();
-//        textConnectionStatus.setText(" ");
-//
-//        mBtAdapter = BluetoothAdapter.getDefaultAdapter();
-//
-//        Set<BluetoothDevice> pairedDevices = mBtAdapter.getBondedDevices();
-//
-//        if (pairedDevices.size() > 0) {
-//            findViewById(R.id.title_paired_devices).setVisibility(View.VISIBLE);
-//            for (BluetoothDevice device : pairedDevices) {
-//                mPairedDevicesArrayAdapter.add(device.getName() + "\n" + device.getAddress());
-//            }
-//        } else{
-//            if (pairedDevices.size() == 0){
-//                findViewById(R.id.infoText).setVisibility(View.VISIBLE);
-//            }
-//        }
-//    }
-//
-//    private void checkBTState()
-//    {
-//        mBtAdapter = BluetoothAdapter.getDefaultAdapter();
-//        if (mBtAdapter==null) {
-//            Toast.makeText(getBaseContext(),"Device does support Bluetooth", Toast.LENGTH_SHORT).show();
-//            finish();
-//        } else {
-//            if (!mBtAdapter.isEnabled()) {
-//                //Prompt user to turn on Bluetooth
-//                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-//                startActivityForResult(enableBtIntent, 1);
-//            }
-//        }
-//    }
+    @Override
+    public void onResume()
+    {
+        super.onResume();
+        bluetoothConnector.connectToController(this);
+    }
+
     public void increaseInteger(View view) {
         minteger = minteger + 1;
         display(minteger);

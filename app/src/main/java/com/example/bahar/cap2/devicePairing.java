@@ -1,11 +1,22 @@
 package com.example.bahar.cap2;
 
+import java.util.List;
 import java.util.Set;
+
+import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
+import android.bluetooth.le.BluetoothLeScanner;
+import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanResult;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.provider.Settings;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
@@ -18,9 +29,25 @@ public class devicePairing extends Activity {
     TextView textConnectionStatus;
     ListView pairedListView;
 
+    private BluetoothAdapter mBluetoothAdapter;
+    private BluetoothLeScanner mScanner;
+    private boolean mScanning;
+    private Handler mHandler;
+
+    private static final long SCAN_PERIOD = 10000;
+
     // Member fields
-    private BluetoothAdapter mBtAdapter;
     private ArrayAdapter<String> mPairedDevicesArrayAdapter;
+
+    private ScanCallback mScanCallback =
+            new ScanCallback() {
+                @Override
+                public void onScanResult(int callbackType, ScanResult result) {
+                    super.onScanResult(callbackType, result);
+                    BluetoothDevice device = result.getDevice();
+                    mPairedDevicesArrayAdapter.add(device.getName() + "\n" + device.getAddress());
+                }
+            };
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -38,6 +65,8 @@ public class devicePairing extends Activity {
         pairedListView = (ListView) findViewById(R.id.paired_devices);
         pairedListView.setAdapter(mPairedDevicesArrayAdapter);
 
+        mHandler = new Handler();
+
     }
 
     @Override
@@ -51,38 +80,51 @@ public class devicePairing extends Activity {
 
         textConnectionStatus.setText(" "); //makes the textview blank
 
-        // Get the local Bluetooth adapter
-        mBtAdapter = BluetoothAdapter.getDefaultAdapter();
-
-        // Get a set of currently paired devices and append to pairedDevices list
-        Set<BluetoothDevice> pairedDevices = mBtAdapter.getBondedDevices();
-
-        // Add previously paired devices to the array
-        if (pairedDevices.size() > 0) {
-            findViewById(R.id.title_paired_devices).setVisibility(View.VISIBLE);//make title viewable
-            for (BluetoothDevice device : pairedDevices) {
-                mPairedDevicesArrayAdapter.add(device.getName() + "\n" + device.getAddress());
-            }
-        } else {
-            mPairedDevicesArrayAdapter.add("no devices paired");
-        }
+        scanLeDevice(true);
     }
 
     //method to check if the device has Bluetooth and if it is on.
     //Prompts the user to turn it on if it is off
     private void checkBTState()
     {
+        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
+            Toast.makeText(this, "BLE Not Supported", Toast.LENGTH_SHORT).show();
+            finish();
+        }
+        final BluetoothManager bluetoothManager =
+                (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        mBluetoothAdapter = bluetoothManager.getAdapter();
+        mScanner = mBluetoothAdapter.getBluetoothLeScanner();
         // Check device has Bluetooth and that it is turned on
-        mBtAdapter=BluetoothAdapter.getDefaultAdapter(); // CHECK THIS OUT THAT IT WORKS!!!
-        if(mBtAdapter==null) {
+        if(mBluetoothAdapter == null) {
             Toast.makeText(getBaseContext(), "Device does not support Bluetooth", Toast.LENGTH_SHORT).show();
             finish();
+        } else if (!mBluetoothAdapter.isEnabled()) {
+            //Prompt user to turn on Bluetooth
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBtIntent, 1);
+            Intent enableLocationIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            startActivityForResult(enableLocationIntent, 1);
+        }
+    }
+
+    private void scanLeDevice(final boolean enable) {
+        if (enable) {
+            // Stops scanning after a pre-defined scan period.
+            mHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    mScanning = false;
+                    mScanner.stopScan(mScanCallback);
+                    invalidateOptionsMenu();
+                }
+            }, SCAN_PERIOD);
+
+            mScanning = true;
+            mScanner.startScan(mScanCallback);
         } else {
-            if (!mBtAdapter.isEnabled()) {
-                //Prompt user to turn on Bluetooth
-                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                startActivityForResult(enableBtIntent, 1);
-            }
+            mScanning = false;
+            mScanner.stopScan(mScanCallback);
         }
     }
 
