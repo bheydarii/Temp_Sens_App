@@ -5,10 +5,19 @@ package com.example.bahar.cap2;
  */
 
 public class ConnectionCallback {
-    public void onConnected() {
+    public static int SCANNING_DEVICES = 0;
+    public static int CONNECTING_TO_DEVICE = 1;
+    public static int DISCOVERING_SERVICES = 2;
+    public static int CONNECTED = 3;
+    public static int DISCONNECTED = 4;
+
+    public static int BLE_NOT_SUPPORTED = 5;
+
+    public void onConnectionStateChanged(int state) {
 
     }
-    public void onConnectionFailed() {
+
+    public void faliureState(int state) {
 
     }
 }
