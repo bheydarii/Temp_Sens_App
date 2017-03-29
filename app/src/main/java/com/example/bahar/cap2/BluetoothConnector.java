@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
@@ -42,15 +43,19 @@ public class BluetoothConnector {
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             String intentAction;
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-
                 Log.i(TAG, "Connected to GATT server.");
                 // Attempts to discover services after successful connection.
-                connectionCallback.onConnectionStateChanged(ConnectionCallback.DISCOVERING_SERVICES);
-                boolean success = mBluetoothGatt.discoverServices();
-                Log.i(TAG, "Attempting to start service discovery:" + success);
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        setConnectionState(ConnectionCallback.DISCOVERING_SERVICES);
+                        boolean success = mBluetoothGatt.discoverServices();
+                        Log.i(TAG, "Attempting to start service discovery:" + success);
+                    }
+                });
 
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                connectionCallback.onConnectionStateChanged(ConnectionCallback.DISCONNECTED);
+                setConnectionState(ConnectionCallback.DISCONNECTED);
                 Log.i(TAG, "Disconnected from GATT server.");
             }
         }
@@ -58,12 +63,13 @@ public class BluetoothConnector {
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                connectionCallback.onConnectionStateChanged(ConnectionCallback.CONNECTED);
+                setConnectionState(ConnectionCallback.CONNECTED);
                 ptacService = mBluetoothGatt.getService(ptacServiceUUID);
                 if (ptacService == null) {
                     Log.e(TAG, "service not found!");
                 }
                 Log.i(TAG, "Successfully discovered GATT services.");
+                readTemperature();
             } else {
                 Log.w(TAG, "onServicesDiscovered received: " + status);
             }
@@ -74,6 +80,9 @@ public class BluetoothConnector {
                                          BluetoothGattCharacteristic characteristic,
                                          int status) {
             Log.i(TAG, "Read a characteristic.");
+            if(characteristic.getUuid().equals(ptacSetTemperatureUUID)) {
+                connectionCallback.readSetTemperature(characteristic.getValue()[0]);
+            }
         }
 
         @Override
@@ -82,19 +91,36 @@ public class BluetoothConnector {
             Log.i(TAG, "Characteristic changed.");
 
         }
+
+        @Override
+        public void onCharacteristicWrite (BluetoothGatt gatt,
+                                    BluetoothGattCharacteristic characteristic,
+                                    int status) {
+            UUID uuid = characteristic.getUuid();
+            Log.i(TAG, uuid.toString() + " characteristic write " + status);
+        }
     };
 
-    private ScanCallback mScanCallback =
+    private final ScanCallback mScanCallback =
             new ScanCallback() {
                 @Override
                 public void onScanResult(int callbackType, ScanResult result) {
                     super.onScanResult(callbackType, result);
-                    BluetoothDevice device = result.getDevice();
-                    String name = device.getName();
-                    if(name == "PTAC Control") {
-                        connectionCallback.onConnectionStateChanged(ConnectionCallback.CONNECTING_TO_DEVICE);
-                        mBluetoothGatt = device.connectGatt(context, false, mGattCallback);
-                        mScanner.stopScan(mScanCallback);
+                    //Log.i(TAG, "Recieved a scan result.");
+                    if(device == null) {
+                        final BluetoothDevice potentialDevice = result.getDevice();
+                        String name = potentialDevice.getName();
+                        if(name != null && name.equals("PTAC Control")) {
+                            device = potentialDevice;
+                            mHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    setConnectionState(ConnectionCallback.CONNECTING_TO_DEVICE);
+                                    mBluetoothGatt = potentialDevice.connectGatt(context, false, mGattCallback);
+                                    //mScanner.stopScan(mScanCallback);
+                                }
+                            });
+                        }
                     }
                 }
 
@@ -114,19 +140,30 @@ public class BluetoothConnector {
     private ConnectionCallback connectionCallback;
     private Context context;
 
+    private int connectionState = ConnectionCallback.DISCONNECTED;
+
     public BluetoothConnector(Context context, ConnectionCallback connectionCallback) {
-        mHandler = new Handler();
+        mHandler = new Handler(context.getMainLooper());
         this.connectionCallback = connectionCallback;
         this.context = context;
     }
 
+    private void setConnectionState(int state) {
+        connectionState = state;
+        connectionCallback.onConnectionStateChanged(state);
+    }
+
     public boolean connectToController(Activity activity) {
-        if(!checkBTState(activity)) {
+        if(connectionState == ConnectionCallback.DISCONNECTED) {
+            if(!checkBTState(activity)) {
+                return false;
+            }
+
+            scanLeDevice(activity, true);
+            return true;
+        } else {
             return false;
         }
-
-        scanLeDevice(activity, true);
-        return true;
     }
 
     public void setTemperature(byte temperature) {
@@ -136,6 +173,12 @@ public class BluetoothConnector {
         setTemperatureChar.setValue(value);
 
         mBluetoothGatt.writeCharacteristic((setTemperatureChar));
+    }
+
+    public void readTemperature() {
+        BluetoothGattCharacteristic setTemperatureChar = ptacService.getCharacteristic(ptacSetTemperatureUUID);
+
+        mBluetoothGatt.readCharacteristic(setTemperatureChar);
     }
 
     public void forceFan(boolean force) {
@@ -173,8 +216,8 @@ public class BluetoothConnector {
             connectionCallback.faliureState(ConnectionCallback.BLE_NOT_SUPPORTED);
             return false;
         }
-        final android.bluetooth.BluetoothManager bluetoothManager =
-                (android.bluetooth.BluetoothManager) activity.getSystemService(Context.BLUETOOTH_SERVICE);
+        final BluetoothManager bluetoothManager =
+                (BluetoothManager) activity.getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter = bluetoothManager.getAdapter();
         mScanner = mBluetoothAdapter.getBluetoothLeScanner();
         // Check device has Bluetooth and that it is turned on
@@ -201,7 +244,12 @@ public class BluetoothConnector {
                 }
             }, SCAN_PERIOD);
 
-            connectionCallback.onConnectionStateChanged(ConnectionCallback.SCANNING_DEVICES);
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    setConnectionState(ConnectionCallback.SCANNING_DEVICES);
+                }
+            });
             mScanner.startScan(mScanCallback);
         } else {
             mScanner.stopScan(mScanCallback);

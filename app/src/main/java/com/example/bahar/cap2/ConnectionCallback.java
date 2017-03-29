@@ -5,11 +5,11 @@ package com.example.bahar.cap2;
  */
 
 public class ConnectionCallback {
-    public static int SCANNING_DEVICES = 0;
-    public static int CONNECTING_TO_DEVICE = 1;
-    public static int DISCOVERING_SERVICES = 2;
-    public static int CONNECTED = 3;
-    public static int DISCONNECTED = 4;
+    public final static int SCANNING_DEVICES = 0;
+    public final static int CONNECTING_TO_DEVICE = 1;
+    public final static int DISCOVERING_SERVICES = 2;
+    public final static int CONNECTED = 3;
+    public final static int DISCONNECTED = 4;
 
     public static int BLE_NOT_SUPPORTED = 5;
 
@@ -18,6 +18,10 @@ public class ConnectionCallback {
     }
 
     public void faliureState(int state) {
+
+    }
+
+    public void readSetTemperature(byte setTemperature) {
 
     }
 }
