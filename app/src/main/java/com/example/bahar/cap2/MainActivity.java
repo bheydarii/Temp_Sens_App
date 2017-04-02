@@ -1,29 +1,38 @@
 package com.example.bahar.cap2;
 
-import java.util.Set;
-
 import android.Manifest;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.content.Intent;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
+import android.view.LayoutInflater;
+import android.view.ViewGroup.LayoutParams;
 import android.widget.TextView;
-import android.widget.Toast;
+import android.widget.PopupWindow;
+import android.widget.ProgressBar;
+import android.widget.RadioButton;
+import android.widget.CheckBox;
 
 import static android.content.ContentValues.TAG;
 
 public class MainActivity extends AppCompatActivity {
     int minteger = 21;
+    private ProgressBar spinner;
 
     ConnectionCallback connectionCallback = new ConnectionCallback() {
         public void onConnectionStateChanged(int state) {
             Log.i(TAG, "Connection state changed " + state + ".");
+            //addition for spinner
+            setContentView(R.layout.activity_main);
+            LayoutInflater layoutInflater =
+                    (LayoutInflater)getBaseContext()
+                        .getSystemService(LAYOUT_INFLATER_SERVICE);
+            View popupView = layoutInflater.inflate(R.layout.popup, null);
+            final PopupWindow popupWindow = new PopupWindow(
+                    popupView, LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT);
+            spinner=(ProgressBar)findViewById(R.id.progressBar1);
+            //end of addition for spinner
             switch (state) {
                 case ConnectionCallback.SCANNING_DEVICES :
                     setStatusText("Scanning");
@@ -40,6 +49,8 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case ConnectionCallback.CONNECTED :
                     setStatusText("Connected");
+                    //Dismiss popup window once connected
+                    popupWindow.dismiss();
                     break;
             }
         }
@@ -116,6 +127,46 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+    //Radio Button and checkbox code
+    public void onRadioButtonClicked(View view) {
+        // Is the button now checked?
+        boolean checked = ((RadioButton) view).isChecked();
+        switch(view.getId()) {
+            case R.id.hot:
+                if (checked)
+                {
+                    bluetoothConnector.forceHeat(true);
+                    bluetoothConnector.forceCool(false);
+                }
+                    break;
+            case R.id.cold:
+                if (checked)
+                {
+                    bluetoothConnector.forceHeat(false);
+                    bluetoothConnector.forceCool(true);
+                }
+                    break;
+            case R.id.none:
+                if (checked) {
+                    bluetoothConnector.forceHeat(false);
+                    bluetoothConnector.forceCool(false);
+                }
+                    break;
+        }
+    }
+    public void onCheckboxClicked(View view) {
+        boolean checked = ((CheckBox) view).isChecked();
+        switch (view.getId()) {
+            case R.id.fan:
+                if (checked)
+                    bluetoothConnector.forceFan(true);
+                else
+                    bluetoothConnector.forceFan(false);
+                break;
+        }
+    }
+    // end of radio button and checkbox code
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults){

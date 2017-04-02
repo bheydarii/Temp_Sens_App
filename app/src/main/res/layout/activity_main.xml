@@ -84,6 +84,53 @@
         android:text="Current Home Temperature"
         android:textSize="20sp"
         android:layout_weight="0.05" />
+    <TextView
+        android:id="@+id/actual_number"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:layout_marginLeft="40dp"
+        android:layout_marginRight="40dp"
+        android:layout_marginTop="16dp"
+        android:text="24"
+        android:textStyle="bold"
+        android:textSize="70sp" />
+
+    <RadioGroup
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <RadioButton android:id="@+id/hot"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Heat on"
+            android:onClick="onRadioButtonClicked"
+            android:textSize="20sp"
+            android:gravity="left"/>
+        <RadioButton android:id="@+id/cold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cool On"
+            android:onClick="onRadioButtonClicked"
+            android:textSize="20sp"
+            android:gravity="center"/>
+        <RadioButton
+            android:id="@+id/none"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Both Off"
+            android:onClick="onRadioButtonClicked"
+            android:textSize="20sp"
+            android:gravity="right"/>
+    </RadioGroup>
+
+    <CheckBox android:id="@+id/fan"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Turn Fan On"
+        android:onClick="onCheckboxClicked"
+        android:layout_gravity="center"/>
+
 
 </LinearLayout>
 
