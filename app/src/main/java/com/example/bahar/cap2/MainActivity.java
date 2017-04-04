@@ -19,23 +19,24 @@ import static android.content.ContentValues.TAG;
 public class MainActivity extends AppCompatActivity {
     int minteger = 21;
     private ProgressBar spinner;
+    private PopupWindow popupWindow;
 
     ConnectionCallback connectionCallback = new ConnectionCallback() {
         public void onConnectionStateChanged(int state) {
             Log.i(TAG, "Connection state changed " + state + ".");
-            //addition for spinner
-            setContentView(R.layout.activity_main);
-            LayoutInflater layoutInflater =
-                    (LayoutInflater)getBaseContext()
-                        .getSystemService(LAYOUT_INFLATER_SERVICE);
-            View popupView = layoutInflater.inflate(R.layout.popup, null);
-            final PopupWindow popupWindow = new PopupWindow(
-                    popupView, LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT);
-            spinner=(ProgressBar)findViewById(R.id.progressBar1);
-            //end of addition for spinner
             switch (state) {
                 case ConnectionCallback.SCANNING_DEVICES :
                     setStatusText("Scanning");
+                    /*addition for spinner
+                    setContentView(R.layout.activity_main);
+                    LayoutInflater layoutInflater =
+                            (LayoutInflater)getBaseContext()
+                                    .getSystemService(LAYOUT_INFLATER_SERVICE);
+                    View popupView = layoutInflater.inflate(R.layout.popup, null);
+                    popupWindow = new PopupWindow(
+                            popupView, LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT);
+                    spinner=(ProgressBar)findViewById(R.id.progressBar1);
+                    //end of addition for spinner*/
                     break;
                 case ConnectionCallback.CONNECTING_TO_DEVICE :
                     setStatusText("Connecting");
@@ -50,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
                 case ConnectionCallback.CONNECTED :
                     setStatusText("Connected");
                     //Dismiss popup window once connected
-                    popupWindow.dismiss();
+                    /*popupWindow.dismiss();*/
                     break;
             }
         }

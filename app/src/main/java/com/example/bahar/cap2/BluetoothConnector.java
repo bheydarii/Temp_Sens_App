@@ -32,7 +32,7 @@ import static android.content.ContentValues.TAG;
 public class BluetoothConnector {
 
     private static final long SCAN_PERIOD = 10000;
-    private static final UUID ptacServiceUUID = UUID.fromString("0000FFF1-0000-1000-8000-00805F9B34FB");
+    private static final UUID ptacServiceUUID = UUID.fromString("0000FFF0-0000-1000-8000-00805F9B34FB");
     private static final UUID ptacSetTemperatureUUID = UUID.fromString("0000FFF1-0000-1000-8000-00805F9B34FB");
     private static final UUID ptacForceFanUUID = UUID.fromString("0000FFF2-0000-1000-8000-00805F9B34FB");
     private static final UUID ptacForceHeatUUID = UUID.fromString("0000FFF3-0000-1000-8000-00805F9B34FB");
