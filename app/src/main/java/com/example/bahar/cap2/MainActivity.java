@@ -1,13 +1,19 @@
 package com.example.bahar.cap2;
 
 import android.Manifest;
+import android.app.Activity;
+import android.content.pm.ActivityInfo;
 import android.os.Handler;
+import android.support.annotation.IdRes;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Layout;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.view.LayoutInflater;
 import android.view.ViewGroup.LayoutParams;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.PopupWindow;
 import android.widget.ProgressBar;
@@ -18,7 +24,8 @@ import static android.content.ContentValues.TAG;
 
 public class MainActivity extends AppCompatActivity {
     int minteger = 21;
-    private ProgressBar spinner;
+    private View popupView;
+    private TextView popupStatusTextView;
     private PopupWindow popupWindow;
 
     ConnectionCallback connectionCallback = new ConnectionCallback() {
@@ -26,23 +33,19 @@ public class MainActivity extends AppCompatActivity {
             Log.i(TAG, "Connection state changed " + state + ".");
             switch (state) {
                 case ConnectionCallback.SCANNING_DEVICES :
+                    //addition for spinner
+                    //setContentView(R.layout.activity_main);
+                    //end of addition for spinner
+                    TextView displayInteger = (TextView) findViewById(
+                            R.id.integer_number);
+                    popupWindow.showAtLocation(displayInteger, Gravity.NO_GRAVITY, 0, 0);
                     setStatusText("Scanning");
-                    /*addition for spinner
-                    setContentView(R.layout.activity_main);
-                    LayoutInflater layoutInflater =
-                            (LayoutInflater)getBaseContext()
-                                    .getSystemService(LAYOUT_INFLATER_SERVICE);
-                    View popupView = layoutInflater.inflate(R.layout.popup, null);
-                    popupWindow = new PopupWindow(
-                            popupView, LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT);
-                    spinner=(ProgressBar)findViewById(R.id.progressBar1);
-                    //end of addition for spinner*/
                     break;
                 case ConnectionCallback.CONNECTING_TO_DEVICE :
                     setStatusText("Connecting");
                     break;
                 case ConnectionCallback.DISCOVERING_SERVICES :
-                    setStatusText("Disc Services");
+                    setStatusText("Discovering Services");
                     break;
                 case ConnectionCallback.DISCONNECTED :
                     setStatusText("Disconnected");
@@ -50,8 +53,18 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case ConnectionCallback.CONNECTED :
                     setStatusText("Connected");
+                    //RadioGroup group = (RadioGroup)findViewById(R.id.radioGroup);
+                    //group.check(R.id.none);
+                    //RadioButton noneButton = (RadioButton)findViewById(R.id.none);
+                    //noneButton.setChecked(true);
                     //Dismiss popup window once connected
-                    /*popupWindow.dismiss();*/
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            onRadioButtonClicked(findViewById(R.id.none));
+                            popupWindow.dismiss();
+                        }
+                    });
                     break;
             }
         }
@@ -72,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    private BluetoothConnector bluetoothConnector;
+    private IBluetoothConnector bluetoothConnector;
     private boolean permissionGranted = false;
     private Handler handler;
 
@@ -80,9 +93,25 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        bluetoothConnector = new BluetoothConnector(this, connectionCallback);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
+//        RadioGroup group = (RadioGroup)findViewById(R.id.radioGroup);
+//        group.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+//            @Override
+//            public void onCheckedChanged(RadioGroup group, @IdRes int checkedId) {
+//                onRadioButtonClicked(findViewById(checkedId));
+//            }
+//        });
+        bluetoothConnector = new BluetoothConnector(this);
 
         handler = new Handler(this.getMainLooper());
+
+        LayoutInflater layoutInflater =
+                (LayoutInflater)getBaseContext()
+                        .getSystemService(LAYOUT_INFLATER_SERVICE);
+        popupView = layoutInflater.inflate(R.layout.popup, null);
+        popupWindow = new PopupWindow(
+                popupView, LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT);
+        popupStatusTextView=(TextView) popupView.findViewById(R.id.popUpStatusText);
     }
 
     @Override
@@ -97,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
         if(!permissionGranted) {
             requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
         } else {
-            bluetoothConnector.connectToController(this);
+            bluetoothConnector.connectToController(this, connectionCallback);
         }
     }
 
@@ -122,9 +151,9 @@ public class MainActivity extends AppCompatActivity {
         handler.post(new Runnable() {
             @Override
             public void run() {
-                TextView textView = (TextView) findViewById(
-                        R.id.textView);
+                TextView textView = (TextView)findViewById(R.id.textView);
                 textView.setText(str);
+                popupStatusTextView.setText(str);
             }
         });
     }
@@ -137,21 +166,18 @@ public class MainActivity extends AppCompatActivity {
             case R.id.hot:
                 if (checked)
                 {
-                    bluetoothConnector.forceHeat(true);
-                    bluetoothConnector.forceCool(false);
+                    bluetoothConnector.forceMode(BluetoothConnector.HEAT_MODE);
                 }
                     break;
             case R.id.cold:
                 if (checked)
                 {
-                    bluetoothConnector.forceHeat(false);
-                    bluetoothConnector.forceCool(true);
+                    bluetoothConnector.forceMode(BluetoothConnector.COOL_MODE);
                 }
                     break;
             case R.id.none:
                 if (checked) {
-                    bluetoothConnector.forceHeat(false);
-                    bluetoothConnector.forceCool(false);
+                    bluetoothConnector.forceMode(BluetoothConnector.AUTO_MODE);
                 }
                     break;
         }
@@ -175,7 +201,7 @@ public class MainActivity extends AppCompatActivity {
         {
             permissionGranted = true;
             Log.i(TAG, "Permission granted.");
-            bluetoothConnector.connectToController(this);
+            bluetoothConnector.connectToController(this, connectionCallback);
         }
     }
 }

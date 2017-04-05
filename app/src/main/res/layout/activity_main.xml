@@ -97,37 +97,43 @@
         android:textSize="70sp" />
 
     <RadioGroup
+        android:id="@+id/radioGroup"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:layout_gravity="center_horizontal"
+        android:gravity="center">
         <RadioButton android:id="@+id/hot"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Heat on"
-            android:onClick="onRadioButtonClicked"
+            android:text="Heat Only"
             android:textSize="20sp"
+            android:onClick="onRadioButtonClicked"
             android:gravity="left"/>
         <RadioButton android:id="@+id/cold"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Cool On"
-            android:onClick="onRadioButtonClicked"
+            android:text="A/C Only"
             android:textSize="20sp"
+            android:onClick="onRadioButtonClicked"
             android:gravity="center"/>
         <RadioButton
             android:id="@+id/none"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Both Off"
-            android:onClick="onRadioButtonClicked"
+            android:text="Auto"
             android:textSize="20sp"
-            android:gravity="right"/>
+            android:gravity="right"
+            android:onClick="onRadioButtonClicked"
+            android:checked="true"/>
     </RadioGroup>
 
     <CheckBox android:id="@+id/fan"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Turn Fan On"
+        android:layout_marginTop="20sp"
+        android:textSize="20sp"
         android:onClick="onCheckboxClicked"
         android:layout_gravity="center"/>
 

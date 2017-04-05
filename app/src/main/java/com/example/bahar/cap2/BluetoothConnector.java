@@ -29,14 +29,17 @@ import static android.content.ContentValues.TAG;
  * Created by Declan Easton on 2017-03-21.
  */
 
-public class BluetoothConnector {
+public class BluetoothConnector implements IBluetoothConnector {
+
+    public static final int HEAT_MODE = 2;
+    public static final int COOL_MODE = 1;
+    public static final int AUTO_MODE = 0;
 
     private static final long SCAN_PERIOD = 10000;
     private static final UUID ptacServiceUUID = UUID.fromString("0000FFF0-0000-1000-8000-00805F9B34FB");
     private static final UUID ptacSetTemperatureUUID = UUID.fromString("0000FFF1-0000-1000-8000-00805F9B34FB");
     private static final UUID ptacForceFanUUID = UUID.fromString("0000FFF2-0000-1000-8000-00805F9B34FB");
-    private static final UUID ptacForceHeatUUID = UUID.fromString("0000FFF3-0000-1000-8000-00805F9B34FB");
-    private static final UUID ptacForceCoolUUID = UUID.fromString("0000FFF4-0000-1000-8000-00805F9B34FB");
+    private static final UUID ptacForceModeUUID = UUID.fromString("0000FFF3-0000-1000-8000-00805F9B34FB");
 
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
         @Override
@@ -55,6 +58,9 @@ public class BluetoothConnector {
                 });
 
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                mBluetoothGatt.discoverServices();
+                mBluetoothGatt.disconnect();
+                device = null;
                 setConnectionState(ConnectionCallback.DISCONNECTED);
                 Log.i(TAG, "Disconnected from GATT server.");
             }
@@ -63,12 +69,12 @@ public class BluetoothConnector {
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                setConnectionState(ConnectionCallback.CONNECTED);
                 ptacService = mBluetoothGatt.getService(ptacServiceUUID);
                 if (ptacService == null) {
                     Log.e(TAG, "service not found!");
                 }
                 Log.i(TAG, "Successfully discovered GATT services.");
+                setConnectionState(ConnectionCallback.CONNECTED);
                 readTemperature();
             } else {
                 Log.w(TAG, "onServicesDiscovered received: " + status);
@@ -142,9 +148,8 @@ public class BluetoothConnector {
 
     private int connectionState = ConnectionCallback.DISCONNECTED;
 
-    public BluetoothConnector(Context context, ConnectionCallback connectionCallback) {
+    public BluetoothConnector(Context context) {
         mHandler = new Handler(context.getMainLooper());
-        this.connectionCallback = connectionCallback;
         this.context = context;
     }
 
@@ -153,7 +158,9 @@ public class BluetoothConnector {
         connectionCallback.onConnectionStateChanged(state);
     }
 
-    public boolean connectToController(Activity activity) {
+    @Override
+    public boolean connectToController(Activity activity, ConnectionCallback connectionCallback) {
+        this.connectionCallback = connectionCallback;
         if(connectionState == ConnectionCallback.DISCONNECTED) {
             if(!checkBTState(activity)) {
                 return false;
@@ -166,6 +173,7 @@ public class BluetoothConnector {
         }
     }
 
+    @Override
     public void setTemperature(byte temperature) {
         BluetoothGattCharacteristic setTemperatureChar = ptacService.getCharacteristic(ptacSetTemperatureUUID);
         byte[] value = new byte[1];
@@ -175,12 +183,14 @@ public class BluetoothConnector {
         mBluetoothGatt.writeCharacteristic((setTemperatureChar));
     }
 
+    @Override
     public void readTemperature() {
         BluetoothGattCharacteristic setTemperatureChar = ptacService.getCharacteristic(ptacSetTemperatureUUID);
 
         mBluetoothGatt.readCharacteristic(setTemperatureChar);
     }
 
+    @Override
     public void forceFan(boolean force) {
         BluetoothGattCharacteristic forceFanChar = ptacService.getCharacteristic(ptacForceFanUUID);
         byte[] value = new byte[1];
@@ -190,22 +200,14 @@ public class BluetoothConnector {
         mBluetoothGatt.writeCharacteristic((forceFanChar));
     }
 
-    public void forceHeat(boolean force) {
-        BluetoothGattCharacteristic forceHeatChar = ptacService.getCharacteristic(ptacForceHeatUUID);
+    @Override
+    public void forceMode(int mode) {
+        BluetoothGattCharacteristic forceModeChar = ptacService.getCharacteristic(ptacForceModeUUID);
         byte[] value = new byte[1];
-        value[0] = force ? (byte)1 : (byte)0;
-        forceHeatChar.setValue(value);
+        value[0] = (byte)mode;
+        forceModeChar.setValue(value);
 
-        mBluetoothGatt.writeCharacteristic((forceHeatChar));
-    }
-
-    public void forceCool(boolean force) {
-        BluetoothGattCharacteristic forceCoolChar = ptacService.getCharacteristic(ptacForceCoolUUID);
-        byte[] value = new byte[1];
-        value[0] = force ? (byte)1 : (byte)0;
-        forceCoolChar.setValue(value);
-
-        mBluetoothGatt.writeCharacteristic((forceCoolChar));
+        mBluetoothGatt.writeCharacteristic(forceModeChar);
     }
 
     //method to check if the device has Bluetooth and if it is on.
@@ -236,14 +238,6 @@ public class BluetoothConnector {
 
     private void scanLeDevice(Activity activity, final boolean enable) {
         if (enable) {
-            // Stops scanning after a pre-defined scan period.
-            mHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    mScanner.stopScan(mScanCallback);
-                }
-            }, SCAN_PERIOD);
-
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
